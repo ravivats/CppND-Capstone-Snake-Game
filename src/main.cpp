@@ -1,4 +1,6 @@
+#include <fstream>
 #include <iostream>
+
 #include "controller.h"
 #include "game.h"
 #include "renderer.h"
@@ -15,8 +17,12 @@ int main() {
   Controller controller;
   Game game(kGridWidth, kGridHeight);
   game.Run(controller, renderer, kMsPerFrame);
-  std::cout << "Game has terminated successfully!\n";
-  std::cout << "Score: " << game.GetScore() << "\n";
+  std::cout << "Game has ended! ｡ﾟ･（>﹏<）･ﾟ｡\n";
+  int finalScore = game.GetScore();
+  if (finalScore < 0) {
+    std::cout << "Eating too much poison killed the snake. (╥_╥)" << "\n";
+  }
+  std::cout << "Score: " << finalScore << "\n";
   std::cout << "Size: " << game.GetSize() << "\n";
   return 0;
 }

@@ -1,4 +1,5 @@
 #include "renderer.h"
+
 #include <iostream>
 #include <string>
 
@@ -33,24 +34,38 @@ Renderer::Renderer(const std::size_t screen_width,
   }
 }
 
+// Destruct renderer
 Renderer::~Renderer() {
   SDL_DestroyWindow(sdl_window);
   SDL_Quit();
 }
 
-void Renderer::Render(Snake const snake, SDL_Point const &food) {
+void Renderer::Render(Snake const snake, Snake const enemy_snake,
+                      std::shared_ptr<Food> const &food,
+                      std::unique_ptr<Poison> const &poison) {
   SDL_Rect block;
   block.w = screen_width / grid_width;
   block.h = screen_height / grid_height;
 
   // Clear screen
+
   SDL_SetRenderDrawColor(sdl_renderer, 0x1E, 0x1E, 0x1E, 0xFF);
   SDL_RenderClear(sdl_renderer);
 
   // Render food
-  SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0xCC, 0x00, 0xFF);
-  block.x = food.x * block.w;
-  block.y = food.y * block.h;
+  SDL_SetRenderDrawColor(sdl_renderer, food->getColor()[0], food->getColor()[1],
+                         food->getColor()[2],
+                         0xFF);  // get rgb color from food object
+  block.x = food->point.x * block.w;
+  block.y = food->point.y * block.h;
+  SDL_RenderFillRect(sdl_renderer, &block);
+
+  // Render poison
+  SDL_SetRenderDrawColor(sdl_renderer, poison->getColor()[0],
+                         poison->getColor()[1], poison->getColor()[2],
+                         0xFF);  // get rgb color from poison object
+  block.x = poison->point.x * block.w;
+  block.y = poison->point.y * block.h;
   SDL_RenderFillRect(sdl_renderer, &block);
 
   // Render snake's body
@@ -71,11 +86,36 @@ void Renderer::Render(Snake const snake, SDL_Point const &food) {
   }
   SDL_RenderFillRect(sdl_renderer, &block);
 
+  // Render enemy snake's body
+  SDL_SetRenderDrawColor(sdl_renderer, 0xCC, 0x55, 0x00, 0xFF);  // burnt orange
+  for (SDL_Point const &point : enemy_snake.body) {
+    block.x = point.x * block.w;
+    block.y = point.y * block.h;
+    SDL_RenderFillRect(sdl_renderer, &block);
+  }
+
+  // Render enemy snake's head
+  block.x = static_cast<int>(enemy_snake.head_x) * block.w;
+  block.y = static_cast<int>(enemy_snake.head_y) * block.h;
+  if (snake.alive) {
+    SDL_SetRenderDrawColor(sdl_renderer, 0x8B, 0x00, 0xFF, 0xFF);  // violet
+  } else {
+    SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0x00, 0x00, 0xFF);
+  }
+  SDL_RenderFillRect(sdl_renderer, &block);
+
   // Update Screen
   SDL_RenderPresent(sdl_renderer);
 }
 
-void Renderer::UpdateWindowTitle(int score, int fps) {
-  std::string title{"Snake Score: " + std::to_string(score) + " FPS: " + std::to_string(fps)};
+void Renderer::UpdateWindowTitle(int score, int fps, std::string food_color,
+                                 std::string poison_color, int food_points,
+                                 int poison_points) {
+  std::string title{
+      "Snake Score: " + std::to_string(score) + " FPS: " + std::to_string(fps) +
+      "      Food: " + food_color + "/" + std::to_string(food_points) +
+      " Pts: " + "    Poison: " + poison_color + "/" +
+      std::to_string(poison_points) +
+      " Pts: "};  // updated title to include more info
   SDL_SetWindowTitle(sdl_window, title.c_str());
 }
